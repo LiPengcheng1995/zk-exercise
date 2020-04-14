@@ -11,6 +11,7 @@
 
     <modules>
         <module>init</module>
+        <module>distribute-lock</module>
     </modules>
     <properties>
     </properties>
