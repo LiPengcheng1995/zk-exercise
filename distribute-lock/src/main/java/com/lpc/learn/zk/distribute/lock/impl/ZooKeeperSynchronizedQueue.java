@@ -1,12 +1,13 @@
 package com.lpc.learn.zk.distribute.lock.impl;
 
 import com.alibaba.fastjson.JSON;
-import com.lpc.learn.distribute.lock.SybchronizedQueue;
+import com.lpc.learn.distribute.lock.SynchronizedQueue;
 import com.lpc.learn.distribute.lock.domain.Node;
 import com.lpc.learn.distribute.lock.domain.NodeInput;
 import com.lpc.learn.exception.RepeatOperateException;
 import com.lpc.learn.exception.RetryException;
 import com.lpc.learn.zk.distribute.lock.impl.domain.ZKNodeFactory;
+import com.lpc.learn.zk.distribute.lock.impl.impl.ZKNodeSurfixComparator;
 import org.apache.commons.lang.StringUtils;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
@@ -17,6 +18,8 @@ import org.apache.zookeeper.data.Stat;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 /**
  * Package: com.lpc.learn.zk.distribute.lock.impl
@@ -26,13 +29,14 @@ import java.util.List;
  * Time: 17:13
  * Description:
  */
-public class ZooKeeperSynchronizedQueue implements SybchronizedQueue {
+public class ZooKeeperSynchronizedQueue implements SynchronizedQueue {
     private String basePrefixId;
     private ZooKeeper zooKeeper;
     private ZooKeeperWatcher watcher;
     public static final String SEPRATOR = "/";
     public static List<ACL> acls = new ArrayList<>();
-    public static ZKNodeFactory zkNodeFactory = new ZKNodeFactory();
+    public static ZKNodeFactory factory = new ZKNodeFactory();
+    public static ZKNodeSurfixComparator comparator = new ZKNodeSurfixComparator();
 
     static {
         acls.add(new ACL(ZooDefs.Perms.ALL, ZooDefs.Ids.ANYONE_ID_UNSAFE));
@@ -74,7 +78,13 @@ public class ZooKeeperSynchronizedQueue implements SybchronizedQueue {
         if (StringUtils.isBlank(result)) {
             throw new RetryException("创建节点失败，返回空,input:" + JSON.toJSONString(input));
         }
-        return zkNodeFactory.getFromString(result);
+        return factory.getFromString(result);
+    }
+
+    @Override
+    public boolean addAndWaitToBeHead(NodeInput input, Long time, TimeUnit unit) {
+
+        return false;
     }
 
 
@@ -108,6 +118,22 @@ public class ZooKeeperSynchronizedQueue implements SybchronizedQueue {
 
     @Override
     public Node getExistNode(NodeInput input) {
+        List<Node> currentNodes = getAllNodesAndOrderBySurfix();
+        if (currentNodes==null||currentNodes.isEmpty()){
+            return null;
+        }
+
+        Node inputNode = null;
+        if (input instanceof Node) {
+            inputNode = (Node) input;
+        }
+
+
+        for (Node temp:currentNodes){
+            if (inputNode != null){
+                if (inputNode.equals())
+            }
+        }
         try {
             List<String> strings = zooKeeper.getChildren(getBasePrefixId(), false);
             System.out.println(JSON.toJSONString(strings));
@@ -128,7 +154,7 @@ public class ZooKeeperSynchronizedQueue implements SybchronizedQueue {
                     }
                 } else {
                     if (s.contains(input.getBaseId())) {
-                        return zkNodeFactory.getFromString(s);
+                        return factory.getFromString(s);
                     }
                 }
             }
@@ -145,30 +171,46 @@ public class ZooKeeperSynchronizedQueue implements SybchronizedQueue {
 
     @Override
     public boolean ifHead(Node node) {
+        List<Node> currentNodes = getAllNodesAndOrderBySurfix();
+        if (currentNodes==null||currentNodes.isEmpty()){
+            return false;
+        }
+        Node head = currentNodes.get(0);
+        if (node.equals(head)){
+            return true;
+        }
+        return false;
+    }
+
+    @Override
+    public String getUniqueId(){
+        return String.valueOf(zooKeeper.getSessionId());
+    }
+
+    private String getBasePrefixId() {
+        return basePrefixId;
+    }
+
+    private List<Node> getAllNodesAndOrderBySurfix(){
         try {
             List<String> strings = zooKeeper.getChildren(getBasePrefixId(), false);
             System.out.println(JSON.toJSONString(strings));
             if (strings == null) {
-                System.out.println("从对应的锁节点下没有拿到子节点，node:" + JSON.toJSONString(node));
-                return false;
+                System.out.println("从对应的锁节点下没有拿到子节点");
+                return new ArrayList<>();
             }
-            int current = Integer.parseInt(node.getSurfix());
-            for (String s : strings) {
-                int temp = Integer.parseInt(s.split(NodeInput.SEPRATOR)[1]);
-                if (temp < current) {
-                    System.out.println("拿到一个比当前节点还小的下表，s:" + s);
-                    return false;
-                }
-            }
+
+            return strings
+                    .stream()
+                    .map(factory::getFromString)
+                    .sorted(comparator)
+                    .collect(Collectors.toList());
         } catch (KeeperException e) {
             e.printStackTrace();
+            throw new RetryException("查询所有子节点发生zk异常", e);
         } catch (InterruptedException e) {
             e.printStackTrace();
+            throw new RetryException("查询所有子节点被打断", e);
         }
-        return true;
-    }
-
-    public String getBasePrefixId() {
-        return basePrefixId;
     }
 }

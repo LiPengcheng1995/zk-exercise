@@ -13,7 +13,7 @@ import com.lpc.learn.distribute.lock.domain.NodeFactory;
  */
 public class ZKNodeFactory implements NodeFactory {
     @Override
-    public Node getFromString(String string) {
+    public ZKNode getFromString(String string) {
         String[] array = string.split(Node.SEPRATOR);
         return new ZKNode(array[0],array[1]);
     }

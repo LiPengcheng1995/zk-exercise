@@ -3,6 +3,8 @@ package com.lpc.learn.zk.distribute.lock.impl.domain;
 import com.lpc.learn.distribute.lock.domain.Node;
 import com.lpc.learn.distribute.lock.domain.NodeInput;
 
+import java.util.Objects;
+
 /**
  * Package: com.lpc.learn.zk.distribute.lock.impl.domain
  * User: 李鹏程
@@ -39,5 +41,20 @@ public class ZKNode implements Node {
     @Override
     public String getBaseId() {
         return baseId;
+    }
+
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        ZKNode node = (ZKNode) o;
+        return baseId.equals(node.baseId) &&
+                surfix.equals(node.surfix);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(baseId, surfix);
     }
 }

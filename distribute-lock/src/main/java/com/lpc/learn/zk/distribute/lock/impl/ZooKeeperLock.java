@@ -1,8 +1,10 @@
 package com.lpc.learn.zk.distribute.lock.impl;
 
 import com.lpc.learn.distribute.lock.MineLock;
-import com.lpc.learn.distribute.lock.SybchronizedQueue;
+import com.lpc.learn.distribute.lock.SynchronizedQueue;
 import com.lpc.learn.distribute.lock.domain.Node;
+import com.lpc.learn.distribute.lock.domain.NodeInput;
+import com.lpc.learn.zk.distribute.lock.impl.domain.ZKNodeInput;
 
 import java.util.concurrent.TimeUnit;
 
@@ -16,21 +18,39 @@ import java.util.concurrent.TimeUnit;
  */
 public class ZooKeeperLock implements MineLock {
 
-    private SybchronizedQueue synchronizer;
+    private SynchronizedQueue synchronizedQueue;
 
-    public static ThreadLocal<Node>
+    private static volatile Node zkNode = null;
 
-    public ZooKeeperLock(SybchronizedQueue synchronizer) {
-        this.synchronizer = synchronizer;
+    private static Object lock = new Object();
+
+    public ZooKeeperLock(SynchronizedQueue synchronizedQueue) {
+        this.synchronizedQueue = synchronizedQueue;
     }
 
     @Override
     public boolean tryLock() {
-        return false;
+        if (zkNode != null){
+            return true;
+        }
+        synchronized (lock){
+            String uniqueId = synchronizedQueue.getUniqueId();
+            NodeInput input = new ZKNodeInput(uniqueId);
+            zkNode = synchronizedQueue.add(input);
+            if (zkNode == null){
+                System.out.println("获取锁失败！返回空");
+                return false;
+            }
+            return true;
+        }
     }
 
     @Override
     public boolean lock(Long time, TimeUnit unit) {
+        if (tryLock()){
+            return true;
+        }
+
         return false;
     }
 
