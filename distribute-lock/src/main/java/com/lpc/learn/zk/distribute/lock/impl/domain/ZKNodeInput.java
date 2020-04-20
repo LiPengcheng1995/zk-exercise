@@ -11,7 +11,6 @@ import com.lpc.learn.distribute.lock.domain.NodeInput;
  * Description:
  */
 public class ZKNodeInput implements NodeInput {
-    public static String SEPRATOR="-";
     private String baseId;
 
     public ZKNodeInput(String baseId) {

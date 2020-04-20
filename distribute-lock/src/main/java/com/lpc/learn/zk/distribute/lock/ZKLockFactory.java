@@ -1,7 +1,7 @@
 package com.lpc.learn.zk.distribute.lock;
 
 import com.lpc.learn.zk.distribute.lock.impl.ZooKeeperLock;
-import com.lpc.learn.zk.distribute.lock.impl.ZooKeeperSynchronizer;
+import com.lpc.learn.zk.distribute.lock.impl.ZooKeeperSynchronizedQueue;
 import com.lpc.learn.zk.distribute.lock.impl.ZooKeeperWatcher;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZooKeeper;
@@ -17,7 +17,7 @@ import org.apache.zookeeper.ZooKeeper;
 public class ZKLockFactory {
     private static ZooKeeperWatcher zooKeeperWatcher = new ZooKeeperWatcher();
     public static ZooKeeperLock build(ZooKeeper zooKeeper,String lockKey) throws KeeperException, InterruptedException {
-        ZooKeeperSynchronizer synchronizer = new ZooKeeperSynchronizer(lockKey,zooKeeper,zooKeeperWatcher);
+        ZooKeeperSynchronizedQueue synchronizer = new ZooKeeperSynchronizedQueue(lockKey,zooKeeper,zooKeeperWatcher);
         return new ZooKeeperLock(synchronizer);
     }
 }

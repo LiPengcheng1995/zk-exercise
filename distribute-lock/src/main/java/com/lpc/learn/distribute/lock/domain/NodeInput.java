@@ -9,6 +9,8 @@ package com.lpc.learn.distribute.lock.domain;
  * Description:
  */
 public interface NodeInput {
+    String SEPRATOR = "-";
+
     /**
      * 最后一级路径前缀
      * @return

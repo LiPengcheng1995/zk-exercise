@@ -1,9 +1,8 @@
 package com.lpc.learn.zk.distribute.lock.impl;
 
 import com.lpc.learn.distribute.lock.MineLock;
-import com.lpc.learn.distribute.lock.QueuedSynchronizer;
+import com.lpc.learn.distribute.lock.SybchronizedQueue;
 import com.lpc.learn.distribute.lock.domain.Node;
-import org.apache.zookeeper.ZooKeeper;
 
 import java.util.concurrent.TimeUnit;
 
@@ -17,11 +16,11 @@ import java.util.concurrent.TimeUnit;
  */
 public class ZooKeeperLock implements MineLock {
 
-    private QueuedSynchronizer synchronizer;
+    private SybchronizedQueue synchronizer;
 
     public static ThreadLocal<Node>
 
-    public ZooKeeperLock(QueuedSynchronizer synchronizer) {
+    public ZooKeeperLock(SybchronizedQueue synchronizer) {
         this.synchronizer = synchronizer;
     }
 

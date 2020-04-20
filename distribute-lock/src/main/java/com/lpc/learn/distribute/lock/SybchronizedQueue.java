@@ -9,9 +9,9 @@ import com.lpc.learn.distribute.lock.domain.NodeInput;
  * Email: lipengcheng3@jd.com
  * Date: 2020/4/14
  * Time: 16:46
- * Description: 一个同步队列的维护 api ，这里和 java 的本地锁不一样，所以这里
+ * Description: 一个同步队列的维护 api
  */
-public interface QueuedSynchronizer extends Synchronizer {
+public interface SybchronizedQueue {
 
     /**
      * 向同步器中加入等待节点
