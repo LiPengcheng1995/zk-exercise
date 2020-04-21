@@ -12,6 +12,7 @@
     <modules>
         <module>init</module>
         <module>distribute-lock</module>
+        <module>distribute-lock-v2</module>
     </modules>
     <properties>
     </properties>
