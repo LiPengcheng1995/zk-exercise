@@ -4,6 +4,7 @@ import com.alibaba.fastjson.JSON;
 import com.lpc.learn.distribute.lock.SynchronizedQueue;
 import com.lpc.learn.distribute.lock.domain.Node;
 import com.lpc.learn.distribute.lock.domain.NodeInput;
+import com.lpc.learn.exception.InvalidParamException;
 import com.lpc.learn.exception.RepeatOperateException;
 import com.lpc.learn.exception.RetryException;
 import com.lpc.learn.zk.distribute.lock.impl.domain.ZKNodeFactory;
@@ -38,6 +39,10 @@ public class ZooKeeperSynchronizedQueue implements SynchronizedQueue {
     public static ZKNodeFactory factory = new ZKNodeFactory();
     public static ZKNodeSurfixComparator comparator = new ZKNodeSurfixComparator();
 
+
+    public volatile boolean ifHead=false;
+    public Thread thread;
+
     static {
         acls.add(new ACL(ZooDefs.Perms.ALL, ZooDefs.Ids.ANYONE_ID_UNSAFE));
     }
@@ -58,8 +63,7 @@ public class ZooKeeperSynchronizedQueue implements SynchronizedQueue {
     public Node add(NodeInput input) {
         Node existNode = getExistNode(input);
         if (existNode != null) {
-            // TODO 先不允许重复拿，后面再优化
-            throw new RepeatOperateException("本机已拿到 zk 锁，不可重复获取");
+            throw new RepeatOperateException("队列中已有可用节点");
         }
 
         String id = getBasePrefixId() + SEPRATOR + input.getBaseId();
@@ -83,37 +87,41 @@ public class ZooKeeperSynchronizedQueue implements SynchronizedQueue {
 
     @Override
     public boolean addAndWaitToBeHead(NodeInput input, Long time, TimeUnit unit) {
+        while (true){
+            Node pre = this.getPre(input);
+            try {
+                Stat stat =  zooKeeper.exists(pre.getId(),watcher);
+                if (stat == null){
+                    return true;
+                }
+            } catch (KeeperException e) {
+                e.printStackTrace();
+                throw new RetryException(e);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+                throw new RetryException(e);
+            }
 
-        return false;
+            watcher.wait(this,time,unit);
+            return ifHead;
+        }
+
     }
 
 
     @Override
     public boolean del(Node node) {
         Node existNode = getExistNode(node);
+        if (existNode == null){
+            return false;
+        }
         try {
             zooKeeper.delete(node.getId(), -1);
         } catch (InterruptedException | KeeperException e) {
             e.printStackTrace();
-            return false;
+            throw new RetryException("节点删除失败");
         }
         return true;
-    }
-
-    @Override
-    public boolean ifExistes(Node node) {
-        try {
-            Stat stat = zooKeeper.exists(node.getId(), false);
-            if (stat == null) {
-                return false;
-            }
-            return true;
-        } catch (KeeperException e) {
-            e.printStackTrace();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-        return false;
     }
 
     @Override
@@ -131,60 +139,88 @@ public class ZooKeeperSynchronizedQueue implements SynchronizedQueue {
 
         for (Node temp:currentNodes){
             if (inputNode != null){
-                if (inputNode.equals())
-            }
-        }
-        try {
-            List<String> strings = zooKeeper.getChildren(getBasePrefixId(), false);
-            System.out.println(JSON.toJSONString(strings));
-            if (strings == null) {
-                return null;
-            }
-            Node inputNode = null;
-            if (input instanceof Node) {
-                inputNode = (Node) input;
-            }
-            for (String s : strings) {
-                if (StringUtils.isBlank(s)) {
-                    continue;
+                if (inputNode.equals(temp)){
+                    return temp;
                 }
-                if (inputNode != null) {
-                    if (s.equals(inputNode.getId())) {
-                        return inputNode;
-                    }
-                } else {
-                    if (s.contains(input.getBaseId())) {
-                        return factory.getFromString(s);
-                    }
+            }else {
+                if (input.getBaseId().equals(temp.getBaseId())){
+                    return temp;
                 }
             }
-        } catch (KeeperException e) {
-            e.printStackTrace();
-            throw new RetryException("创建节点发生zk异常,input:" + JSON.toJSONString(input), e);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-            throw new RetryException("创建节点阻塞被打断,input:" + JSON.toJSONString(input), e);
         }
 
         return null;
     }
 
     @Override
-    public boolean ifHead(Node node) {
-        List<Node> currentNodes = getAllNodesAndOrderBySurfix();
-        if (currentNodes==null||currentNodes.isEmpty()){
-            return false;
+    public Node getPre(NodeInput input) {
+        List<Node> currentList =  getAllNodesAndOrderBySurfix();
+        Node inputNode = null;
+        if (input instanceof Node) {
+            inputNode = (Node) input;
         }
-        Node head = currentNodes.get(0);
-        if (node.equals(head)){
-            return true;
+
+        for (int i=0;i<currentList.size();i++){
+            Node temp = currentList.get(i);
+            if (inputNode != null){
+                if (inputNode.equals(temp)){
+                    return i<=0?null:currentList.get(i-1);
+                }
+            }else {
+                if (input.getBaseId().equals(temp.getBaseId())){
+                    return i<=0?null:currentList.get(i-1);
+                }
+            }
         }
-        return false;
+        throw new InvalidParamException("传入的节点在队列中不存在");
+    }
+
+    @Override
+    public Node getPost(NodeInput input) {
+        List<Node> currentList =  getAllNodesAndOrderBySurfix();
+        Node inputNode = null;
+        if (input instanceof Node) {
+            inputNode = (Node) input;
+        }
+
+        for (int i=0;i<currentList.size();i++){
+            Node temp = currentList.get(i);
+            if (inputNode != null){
+                if (inputNode.equals(temp)){
+                    return i>=currentList.size()-1?null:currentList.get(i+1);
+                }
+            }else {
+                if (input.getBaseId().equals(temp.getBaseId())){
+                    return i>=currentList.size()-1?null:currentList.get(i+1);
+                }
+            }
+        }
+        throw new InvalidParamException("传入的节点在队列中不存在");
     }
 
     @Override
     public String getUniqueId(){
         return String.valueOf(zooKeeper.getSessionId());
+    }
+
+    @Override
+    public boolean getIfHead() {
+        return ifHead;
+    }
+
+    @Override
+    public void setIfHead(boolean ifHead) {
+        this.ifHead = ifHead;
+    }
+
+    @Override
+    public void setThread(Thread thread) {
+        this.thread = thread;
+    }
+
+    @Override
+    public Thread getThread() {
+        return thread;
     }
 
     private String getBasePrefixId() {

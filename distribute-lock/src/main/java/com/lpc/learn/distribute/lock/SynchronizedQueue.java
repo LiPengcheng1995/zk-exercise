@@ -13,7 +13,7 @@ import java.util.concurrent.TimeUnit;
  * Time: 16:46
  * Description: 一个同步队列的维护 api
  */
-public interface SynchronizedQueue {
+public interface SynchronizedQueue extends BlockNode{
 
     /**
      * 向同步器中加入等待节点
@@ -38,24 +38,12 @@ public interface SynchronizedQueue {
      */
     boolean del(Node node);
 
-    /**
-     * 节点是否在同步器中存在
-     *
-     * @param node
-     * @return
-     */
-    boolean ifExistes(Node node);
 
     Node getExistNode(NodeInput input);
 
-    /**
-     * 节点是否位于队首
-     *
-     * @param node
-     * @return
-     */
-    boolean ifHead(Node node);
+    Node getPre(NodeInput input);
+
+    Node getPost(NodeInput input);
 
 
-    String getUniqueId();
 }
