@@ -24,6 +24,9 @@ public class ZKDistributeLatch implements DistributeLatch, Watcher {
 
     public ZKQueueClient client;
 
+    public ZKDistributeLatch(ZKQueueClient client) {
+        this.client = client;
+    }
 
     @Override
     public BlockNode addAndWait(Long time, TimeUnit unit) {

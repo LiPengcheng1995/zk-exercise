@@ -11,10 +11,8 @@ import java.util.concurrent.TimeUnit;
  * Description:
  */
 public interface DistributeLock {
-    boolean tryLock();
-
     boolean lock(Long time, TimeUnit unit);
 
-    boolean release();
+    void release();
 
 }
