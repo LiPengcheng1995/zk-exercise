@@ -1,5 +1,7 @@
 package com.lpc.learn.distribute.lock.common;
 
+import com.lpc.learn.distribute.lock.zk.BlockNode;
+
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -13,6 +15,7 @@ import java.util.concurrent.TimeUnit;
  */
 public interface DistributeLatch {
 
-    boolean addAndWait(Long time, TimeUnit unit);
+    BlockNode addAndWait(Long time, TimeUnit unit);
 
+    void free(BlockNode blockNode);
 }

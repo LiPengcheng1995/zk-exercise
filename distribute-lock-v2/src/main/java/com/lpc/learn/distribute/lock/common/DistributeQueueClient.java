@@ -1,7 +1,5 @@
 package com.lpc.learn.distribute.lock.common;
 
-import java.util.concurrent.TimeUnit;
-
 /**
  * Package: com.lpc.learn.distribute.lock.common
  * User: 李鹏程
@@ -12,19 +10,14 @@ import java.util.concurrent.TimeUnit;
  */
 public interface DistributeQueueClient {
 
-    DistributeNode add();
+    DistributeQueueNode add();
 
-    boolean delete(DistributeNode node);
+    boolean delete(DistributeQueueNode node);
 
-    int getPosition();
+    DistributeQueueNode getPre(DistributeQueueNode node);
 
-    DistributeNode getPre();
+    DistributeQueueNode buildBasicNode();
 
-    DistributeNode getAfter();
+    boolean watchToBeDelete(DistributeQueueNode node, DistributeLatch latch);
 
-    boolean addAndWaitToBeHead(Long time, TimeUnit unit);
-
-    interface DistributeNode {
-
-    }
 }
