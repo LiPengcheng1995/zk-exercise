@@ -51,7 +51,7 @@ public class ZKDistributeLatch implements DistributeLatch, Watcher {
                 return node;
             }
         }
-        if (!node.ifSuccess){
+        if (!node.ifSuccess) {
             waitMap.remove(distributeNodePre.getId());
             client.delete(distributeNode);
             return null;
@@ -74,8 +74,8 @@ public class ZKDistributeLatch implements DistributeLatch, Watcher {
             if (watchedEvent.getType() == Event.EventType.NodeDeleted) {
                 waitMap.get(watchedEvent.getPath()).setIfSuccess(true);
                 waitMap.get(watchedEvent.getPath()).getThread().interrupt();
-            }else {
-                client.watchToBeDelete(waitMap.get(watchedEvent.getPath()).getWatchedNode(),this);
+            } else {
+                client.watchToBeDelete(waitMap.get(watchedEvent.getPath()).getWatchedNode(), this);
             }
         }
     }

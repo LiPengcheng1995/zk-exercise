@@ -5,16 +5,17 @@ import com.lpc.learn.distribute.lock.common.DistributeLatch;
 import com.lpc.learn.distribute.lock.common.DistributeQueueClient;
 import com.lpc.learn.distribute.lock.common.DistributeQueueNode;
 import com.lpc.learn.distribute.lock.common.exception.DistributeException;
-import com.lpc.learn.distribute.lock.common.exception.RepeatOperateException;
 import com.lpc.learn.distribute.lock.common.exception.RetryException;
 import org.apache.commons.lang.StringUtils;
-import org.apache.zookeeper.*;
+import org.apache.zookeeper.CreateMode;
+import org.apache.zookeeper.KeeperException;
+import org.apache.zookeeper.ZooDefs;
+import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.data.ACL;
 import org.apache.zookeeper.data.Stat;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
@@ -27,21 +28,19 @@ import java.util.stream.Collectors;
  */
 public class ZKQueueClient implements DistributeQueueClient {
 
-    private ZooKeeper zooKeeper;
+    public static List<ACL> acls = new ArrayList<>();
 
-    private String basePrefixId;
+    static {
+        acls.add(new ACL(ZooDefs.Perms.ALL, ZooDefs.Ids.ANYONE_ID_UNSAFE));
+    }
 
     ZKDistributeQueueNodeComparator comparator = new ZKDistributeQueueNodeComparator();
 
     DistributeQueueNode head = null;
 
     DistributeQueueNode tail = null;
-
-    public static List<ACL> acls = new ArrayList<>();
-
-    static {
-        acls.add(new ACL(ZooDefs.Perms.ALL, ZooDefs.Ids.ANYONE_ID_UNSAFE));
-    }
+    private ZooKeeper zooKeeper;
+    private String basePrefixId;
 
     public ZKQueueClient(ZooKeeper zooKeeper, String basePrefixId) {
         this.zooKeeper = zooKeeper;
@@ -132,14 +131,14 @@ public class ZKQueueClient implements DistributeQueueClient {
     @Override
     public boolean watchToBeDelete(DistributeQueueNode node, DistributeLatch latch) {
         ZKDistributeLatch zkDistributeLatch;
-        if (latch instanceof ZKDistributeLatch){
+        if (latch instanceof ZKDistributeLatch) {
             zkDistributeLatch = (ZKDistributeLatch) latch;
-        }else {
+        } else {
             throw new DistributeException("入参不合理");
         }
         try {
             Stat stat = zooKeeper.exists(node.getId(), zkDistributeLatch);
-            if (stat == null){
+            if (stat == null) {
                 return true;
             }
         } catch (KeeperException e) {

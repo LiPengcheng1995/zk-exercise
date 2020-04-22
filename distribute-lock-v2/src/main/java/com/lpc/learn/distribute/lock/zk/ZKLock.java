@@ -2,7 +2,6 @@ package com.lpc.learn.distribute.lock.zk;
 
 import com.lpc.learn.distribute.lock.common.DistributeLock;
 
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
 
 /**

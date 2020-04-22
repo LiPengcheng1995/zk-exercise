@@ -15,6 +15,6 @@ public class ZKDistributeQueueNodeComparator implements Comparator<ZKDistributeQ
     public int compare(ZKDistributeQueueNode o1, ZKDistributeQueueNode o2) {
         Integer o1Serial = Integer.valueOf(o1.getSurffixId());
         Integer o2Serial = Integer.valueOf(o2.getSurffixId());
-        return o1Serial-o2Serial;
+        return o1Serial - o2Serial;
     }
 }

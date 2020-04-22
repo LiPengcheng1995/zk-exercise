@@ -29,7 +29,7 @@ public class ZKDistributeQueueNode implements DistributeQueueNode {
 
     public ZKDistributeQueueNode(String input) {
         int index = input.lastIndexOf(PATH_SEPRATOR);
-        baseId = input.substring(0,index);
+        baseId = input.substring(0, index);
 
         String surffix = input.substring(index);
         String[] array = surffix.split(INNER_SEPRATOR);
@@ -42,9 +42,17 @@ public class ZKDistributeQueueNode implements DistributeQueueNode {
         return baseId;
     }
 
+    public void setBaseId(String baseId) {
+        this.baseId = baseId;
+    }
+
     @Override
     public String getLocalId() {
         return localId;
+    }
+
+    public void setLocalId(String localId) {
+        this.localId = localId;
     }
 
     @Override
@@ -52,20 +60,12 @@ public class ZKDistributeQueueNode implements DistributeQueueNode {
         return surffixId;
     }
 
-    @Override
-    public String getId() {
-        return baseId+PATH_SEPRATOR+localId+INNER_SEPRATOR+surffixId;
-    }
-
-    public void setBaseId(String baseId) {
-        this.baseId = baseId;
-    }
-
-    public void setLocalId(String localId) {
-        this.localId = localId;
-    }
-
     public void setSurffixId(String surffixId) {
         this.surffixId = surffixId;
+    }
+
+    @Override
+    public String getId() {
+        return baseId + PATH_SEPRATOR + localId + INNER_SEPRATOR + surffixId;
     }
 }
