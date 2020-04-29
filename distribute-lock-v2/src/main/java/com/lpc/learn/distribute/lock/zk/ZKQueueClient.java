@@ -14,6 +14,7 @@ import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.data.ACL;
 import org.apache.zookeeper.data.Stat;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -42,8 +43,8 @@ public class ZKQueueClient implements DistributeQueueClient {
     private ZooKeeper zooKeeper;
     private String basePrefixId;
 
-    public ZKQueueClient(ZooKeeper zooKeeper, String basePrefixId) {
-        this.zooKeeper = zooKeeper;
+    public ZKQueueClient(String host,Integer sessionTimeOut, String basePrefixId) throws IOException {
+        this.zooKeeper = new ZooKeeper(host,sessionTimeOut,null);
         this.basePrefixId = basePrefixId;
         this.head = new ZKDistributeQueueNode(basePrefixId, String.valueOf(zooKeeper.getSessionId()), "-1");
         this.tail = new ZKDistributeQueueNode(basePrefixId, String.valueOf(zooKeeper.getSessionId()), "-2");
@@ -58,7 +59,8 @@ public class ZKQueueClient implements DistributeQueueClient {
         }
         String result = "";
         try {
-            result = zooKeeper.create(buildBasicNode().getId(), null, acls, CreateMode.EPHEMERAL_SEQUENTIAL);
+            String temp = this.basePrefixId+DistributeQueueNode.PATH_SEPRATOR+zooKeeper.getSessionId()+DistributeQueueNode.INNER_SEPRATOR;
+            result = zooKeeper.create(temp, null, acls, CreateMode.EPHEMERAL_SEQUENTIAL);
         } catch (KeeperException e) {
             e.printStackTrace();
             throw new RetryException("创建节点发生zk异常,id:" + buildBasicNode().getId(), e);

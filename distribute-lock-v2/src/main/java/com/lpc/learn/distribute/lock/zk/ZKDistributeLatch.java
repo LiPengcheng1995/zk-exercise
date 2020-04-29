@@ -6,6 +6,7 @@ import com.lpc.learn.distribute.lock.common.exception.DistributeException;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
 
+import java.io.IOException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
@@ -24,8 +25,9 @@ public class ZKDistributeLatch implements DistributeLatch, Watcher {
 
     public ZKQueueClient client;
 
-    public ZKDistributeLatch(ZKQueueClient client) {
-        this.client = client;
+
+    public ZKDistributeLatch(String host,Integer sessionTimeOut,String basePrefixId) throws IOException {
+        this.client =new ZKQueueClient(host,sessionTimeOut,basePrefixId);
     }
 
     @Override

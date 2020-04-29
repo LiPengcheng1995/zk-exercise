@@ -6,6 +6,7 @@ import com.lpc.learn.distribute.lock.common.exception.DistributeException;
 import com.lpc.learn.distribute.lock.common.exception.RepeatOperateException;
 import org.apache.zookeeper.ZooKeeper;
 
+import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -24,9 +25,8 @@ public class ZKLock implements DistributeLock {
 
     public static ThreadLocal<BlockNode> nodeThreadLocal = new ThreadLocal<>();
 
-    public ZKLock(ZooKeeper zooKeeper,String basePrefixId) {
-        client = new ZKQueueClient(zooKeeper,basePrefixId);
-        latch = new ZKDistributeLatch(client);
+    public ZKLock(String host,Integer sessionTimeOut,String basePrefixId) throws IOException {
+        latch = new ZKDistributeLatch(host,sessionTimeOut,basePrefixId);
     }
 
     @Override

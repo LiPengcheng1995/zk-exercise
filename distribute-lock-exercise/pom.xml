@@ -11,5 +11,11 @@
 
     <artifactId>distribute-lock-exercise</artifactId>
 
+    <dependencies>
+        <dependency>
+            <groupId>com.lpc.learn.zk</groupId>
+            <artifactId>distribute-lock-v2</artifactId>
+        </dependency>
+    </dependencies>
 
 </project>
