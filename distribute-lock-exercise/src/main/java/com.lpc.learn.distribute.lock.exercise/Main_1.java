@@ -54,7 +54,15 @@ public class Main_1 {
                     System.out.println("子任务退出:"+threadId);
                     return;
                 }
-                if (zkLock.lock(1000L, TimeUnit.MICROSECONDS)){
+                boolean ifLock = false;
+                try {
+                    ifLock = zkLock.lock(1000L, TimeUnit.MICROSECONDS);
+                }catch (Exception e){
+                    e.printStackTrace();
+                    continue;
+                }
+
+                if (ifLock){
                     long x = Math.round(Math.random()*1000);
                     System.out.println("======开始进行子任务:"+threadId+",睡眠时间:"+x);
                     try{

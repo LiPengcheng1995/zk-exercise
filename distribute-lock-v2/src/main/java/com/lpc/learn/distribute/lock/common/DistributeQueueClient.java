@@ -1,5 +1,7 @@
 package com.lpc.learn.distribute.lock.common;
 
+import java.io.IOException;
+
 /**
  * Package: com.lpc.learn.distribute.lock.common
  * User: 李鹏程
@@ -20,4 +22,5 @@ public interface DistributeQueueClient {
 
     boolean watchToBeDelete(DistributeQueueNode node, DistributeLatch latch);
 
+    void refresh();
 }

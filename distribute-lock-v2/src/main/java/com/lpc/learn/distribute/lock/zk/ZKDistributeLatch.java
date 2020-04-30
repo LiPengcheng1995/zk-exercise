@@ -31,37 +31,37 @@ public class ZKDistributeLatch implements DistributeLatch, Watcher {
     }
 
     @Override
-    public BlockNode addAndWait(Long time, TimeUnit unit) {
-        DistributeQueueNode distributeNode = client.add();
-        DistributeQueueNode distributeNodePre = client.getPre(distributeNode);
-        if (distributeNodePre == null) {
-            throw new DistributeException("刚加入的节点不见了");
-        }
+    public BlockNode addAndWait(Long time, TimeUnit unit) throws IOException {
+            DistributeQueueNode distributeNode = client.add();
+            DistributeQueueNode distributeNodePre = client.getPre(distributeNode);
+            if (distributeNodePre == null) {
+                throw new DistributeException("刚加入的节点不见了");
+            }
 
 
-        BlockNode node = new BlockNode();
-        node.setThread(Thread.currentThread());
-        node.setWatchedNode(distributeNodePre);
-        node.setThisNode(distributeNode);
-        waitMap.putIfAbsent(distributeNodePre.getId(), node);
-        if (distributeNodePre == client.head) {
-            return node;
-        }
-
-        Long startTime = System.currentTimeMillis();
-        Long endTime = startTime + unit.convert(time, TimeUnit.MILLISECONDS);
-        while (System.currentTimeMillis() < endTime) {
-            client.watchToBeDelete(distributeNodePre, this);
-            if (node.ifSuccess) {
+            BlockNode node = new BlockNode();
+            node.setThread(Thread.currentThread());
+            node.setWatchedNode(distributeNodePre);
+            node.setThisNode(distributeNode);
+            waitMap.putIfAbsent(distributeNodePre.getId(), node);
+            if (distributeNodePre == client.head) {
                 return node;
             }
-        }
-        if (!node.ifSuccess) {
-            waitMap.remove(distributeNodePre.getId());
-            client.delete(distributeNode);
-            return null;
-        }
-        return node;
+
+            Long startTime = System.currentTimeMillis();
+            Long endTime = startTime + unit.convert(time, TimeUnit.MILLISECONDS);
+            while (System.currentTimeMillis() < endTime) {
+                client.watchToBeDelete(distributeNodePre, this);
+                if (node.ifSuccess) {
+                    return node;
+                }
+            }
+            if (!node.ifSuccess) {
+                waitMap.remove(distributeNodePre.getId());
+                client.delete(distributeNode);
+                return null;
+            }
+            return node;
     }
 
     @Override

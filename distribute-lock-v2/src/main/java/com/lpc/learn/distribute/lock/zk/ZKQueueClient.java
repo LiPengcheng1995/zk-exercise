@@ -7,16 +7,14 @@ import com.lpc.learn.distribute.lock.common.DistributeQueueNode;
 import com.lpc.learn.distribute.lock.common.exception.DistributeException;
 import com.lpc.learn.distribute.lock.common.exception.RetryException;
 import org.apache.commons.lang.StringUtils;
-import org.apache.zookeeper.CreateMode;
-import org.apache.zookeeper.KeeperException;
-import org.apache.zookeeper.ZooDefs;
-import org.apache.zookeeper.ZooKeeper;
+import org.apache.zookeeper.*;
 import org.apache.zookeeper.data.ACL;
 import org.apache.zookeeper.data.Stat;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.stream.Collectors;
 
 /**
@@ -27,7 +25,7 @@ import java.util.stream.Collectors;
  * Time: 20:01
  * Description:
  */
-public class ZKQueueClient implements DistributeQueueClient {
+public class ZKQueueClient implements DistributeQueueClient, Watcher {
 
     public static List<ACL> acls = new ArrayList<>();
 
@@ -41,11 +39,18 @@ public class ZKQueueClient implements DistributeQueueClient {
 
     DistributeQueueNode tail = null;
     private ZooKeeper zooKeeper;
-    private String basePrefixId;
 
-    public ZKQueueClient(String host,Integer sessionTimeOut, String basePrefixId) throws IOException {
-        this.zooKeeper = new ZooKeeper(host,sessionTimeOut,null);
+    private String basePrefixId;
+    private String host;
+    private Integer sessionTimeOut;
+    volatile boolean ifStart = false;
+    ConcurrentLinkedQueue<Thread> waitToCreate = new ConcurrentLinkedQueue<>();
+
+    public ZKQueueClient(String host, Integer sessionTimeOut, String basePrefixId) throws IOException {
         this.basePrefixId = basePrefixId;
+        this.host = host;
+        this.sessionTimeOut = sessionTimeOut;
+        this.refresh();
         this.head = new ZKDistributeQueueNode(basePrefixId, String.valueOf(zooKeeper.getSessionId()), "-1");
         this.tail = new ZKDistributeQueueNode(basePrefixId, String.valueOf(zooKeeper.getSessionId()), "-2");
     }
@@ -59,7 +64,7 @@ public class ZKQueueClient implements DistributeQueueClient {
         }
         String result = "";
         try {
-            String temp = this.basePrefixId+DistributeQueueNode.PATH_SEPRATOR+zooKeeper.getSessionId()+DistributeQueueNode.INNER_SEPRATOR;
+            String temp = this.basePrefixId + DistributeQueueNode.PATH_SEPRATOR + zooKeeper.getSessionId() + DistributeQueueNode.INNER_SEPRATOR;
             result = zooKeeper.create(temp, null, acls, CreateMode.EPHEMERAL_SEQUENTIAL);
         } catch (KeeperException e) {
             e.printStackTrace();
@@ -151,12 +156,42 @@ public class ZKQueueClient implements DistributeQueueClient {
         return false;
     }
 
+    @Override
+    public void refresh() {
+        doRefresh();
+
+        waitToCreate.add(Thread.currentThread());
+        while (true) {
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                System.out.println("被唤醒");
+            }
+            if (ifStart) {
+                waitToCreate.remove(Thread.currentThread());
+                break;
+            }
+
+        }
+
+
+    }
+
+    private void doRefresh() {
+        ifStart = false;
+        try {
+            this.zooKeeper = new ZooKeeper(this.host, this.sessionTimeOut, this);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
 
     private List<DistributeQueueNode> getAllNodesSortedByCreateTime() {
         try {
             List<String> strings = zooKeeper.getChildren(basePrefixId, false);
             System.out.println(JSON.toJSONString(strings));
-            if (strings == null) {
+            if (strings == null || strings.size() == 0) {
                 System.out.println("从对应的锁节点下没有拿到子节点");
                 return new ArrayList<>();
             }
@@ -175,4 +210,18 @@ public class ZKQueueClient implements DistributeQueueClient {
         }
     }
 
+    @Override
+    public void process(WatchedEvent watchedEvent) {
+        if (watchedEvent.getType() == Event.EventType.None) {
+            switch (watchedEvent.getState()) {
+                case SyncConnected:
+                    this.ifStart = true;
+                    waitToCreate.forEach(Thread::interrupt);
+                    break;
+                case Expired:
+                    doRefresh();
+                    break;
+            }
+        }
+    }
 }

@@ -31,10 +31,20 @@ public class ZKLock implements DistributeLock {
 
     @Override
     public boolean lock(Long time, TimeUnit unit) {
-        BlockNode node = latch.addAndWait(time,unit);
-        if (node ==null){
-            return false;
+        BlockNode node = null;
+        while (true){
+            try {
+                node = latch.addAndWait(time,unit);
+            } catch (IOException e) {
+                e.printStackTrace();
+                latch.client.refresh();
+            }
+            if (node ==null){
+                return false;
+            }
+            break;
         }
+
 
         nodeThreadLocal.set(node);
         return true;

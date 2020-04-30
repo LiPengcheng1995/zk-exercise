@@ -2,6 +2,7 @@ package com.lpc.learn.distribute.lock.common;
 
 import com.lpc.learn.distribute.lock.zk.BlockNode;
 
+import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -15,7 +16,7 @@ import java.util.concurrent.TimeUnit;
  */
 public interface DistributeLatch {
 
-    BlockNode addAndWait(Long time, TimeUnit unit);
+    BlockNode addAndWait(Long time, TimeUnit unit) throws IOException;
 
     void free(BlockNode blockNode);
 }
