@@ -11,5 +11,10 @@
 
     <artifactId>simple-zk-exercise</artifactId>
 
-
+    <dependencies>
+        <dependency>
+            <groupId>org.apache.zookeeper</groupId>
+            <artifactId>zookeeper</artifactId>
+        </dependency>
+    </dependencies>
 </project>
