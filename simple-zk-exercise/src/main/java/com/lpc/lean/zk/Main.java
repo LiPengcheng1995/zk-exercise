@@ -15,10 +15,10 @@ import org.springframework.web.socket.server.standard.ServerEndpointExporter;
  * 使用 SpringBoot 启动吧，带上完整的日志功能，方便使用
  */
 @SpringBootApplication
-public class Main_1 {
+public class Main {
 
     public static void main(String[] args) {
-        SpringApplication.run(Main_1.class, args);
+        SpringApplication.run(Main.class, args);
     }
 
     @Bean

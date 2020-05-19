@@ -7,6 +7,7 @@ import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.ZooKeeper;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
 import java.io.IOException;
@@ -26,7 +27,7 @@ import java.util.function.Consumer;
  * Description:
  */
 @Slf4j
-@Resource
+@Service
 public class ZKServiceImpl implements ZKService, InitializingBean {
 
 
@@ -47,6 +48,11 @@ public class ZKServiceImpl implements ZKService, InitializingBean {
     @Override
     public void addWatch(String zkPath, Consumer<ZKNodeEvent> consumer) {
         listenerMap.put(zkPath, consumer);
+    }
+
+    @Override
+    public void removeWatch(String zkPath) {
+        listenerMap.remove(zkPath);
     }
 
     public void suspendUntilStartFinish() {

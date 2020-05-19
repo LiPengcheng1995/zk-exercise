@@ -15,4 +15,5 @@ import java.util.function.Consumer;
  */
 public interface ZKService extends Watcher {
     void addWatch(String zkPath, Consumer<ZKNodeEvent> consumer);
+    void removeWatch(String zkPath);
 }
