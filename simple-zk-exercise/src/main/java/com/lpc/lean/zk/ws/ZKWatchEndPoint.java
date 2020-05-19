@@ -1,6 +1,7 @@
 package com.lpc.lean.zk.ws;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Component;
 import org.springframework.web.bind.annotation.PathVariable;
 
 import javax.websocket.*;
@@ -18,13 +19,14 @@ import java.util.concurrent.ConcurrentHashMap;
  * Description:
  */
 @Slf4j
-@ServerEndpoint("/webSocket/zk/{id}")
+@Component
+@ServerEndpoint("/webSocket/zk")
 public class ZKWatchEndPoint {
 
     public static Map<String, Session> sessionMap = new ConcurrentHashMap<>();
 
     @OnOpen
-    public void onOpen(Session session, @PathVariable("id") String id) throws IOException {
+    public void onOpen(Session session) throws IOException {
         String mess = "收到 WebSocket 建立请求，wsId:%s";
         mess = String.format(mess,session.getId());
         log.info(mess);
@@ -47,11 +49,15 @@ public class ZKWatchEndPoint {
     }
 
     @OnError
-    public void onError(Session session) throws IOException {
-        String mess="处理 WebSocket 消息出现异常，wsId:%s";
-        mess = String.format(mess,session.getId());
-        log.info(mess);
-        session.getBasicRemote().sendText(mess);
+    public void onError(Session session,Throwable throwable)  {
+        String mess="处理 WebSocket 消息出现异常，wsId:%s,%s,";
+        mess = String.format(mess,session.getId(),throwable.getMessage());
+        log.info(mess,throwable);
+        try {
+            session.getBasicRemote().sendText(mess);
+        } catch (IOException e) {
+            log.info("",e);
+        }
     }
 
 }

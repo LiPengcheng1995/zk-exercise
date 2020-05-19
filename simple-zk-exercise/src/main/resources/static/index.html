@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+<textarea id="history" cols="100" rows="30"></textarea>
+
+<input id="Message">
+<input type="button" onclick="sendWS()" value="发送"/>
+<input type="button" onclick="openWS()" value="开启"/>
+<input type="button" onclick="closeWS()" value="关闭"/>
+<script>
+    var socket;
+    var sendMessage = document.getElementById('Message');
+    var messageHistory = document.getElementById('history');
+
+    function sendWS(){
+        if (socket == null){
+            addToHistory("请先打开WS连接")
+        }else {
+            addToHistory("前端: "+sendMessage.value)
+
+            socket.send(sendMessage.value)
+        }
+    }
+    function openWS(){
+        // Create WebSocket connection.
+        socket = new WebSocket('ws://localhost:8080/webSocket/zk');
+
+        // Connection opened
+        socket.onopen = function (event) {
+            addToHistory("连接到服务端！！！");
+        };
+
+        // Listen for messages
+        socket.onmessage = function (event) {
+            addToHistory("服务端: "+event.data);
+        };
+
+        // Listen for messages
+        socket.onclose = function (event) {
+            addToHistory("收到服务端断开信息！！！");
+        };
+    }
+
+    function closeWS(){
+        addToHistory("关闭WS！！！");
+        socket.close()
+    }
+    
+    function addToHistory(data) {
+        messageHistory.value = messageHistory.value+"\r\n"+data;
+
+    }
+</script>
+</body>
+</html>
