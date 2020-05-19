@@ -17,12 +17,12 @@ import org.springframework.web.socket.server.standard.ServerEndpointExporter;
 @SpringBootApplication
 public class Main_1 {
 
+    public static void main(String[] args) {
+        SpringApplication.run(Main_1.class, args);
+    }
+
     @Bean
     public ServerEndpointExporter serverEndpoint() {
         return new ServerEndpointExporter();
-    }
-
-    public static void main(String[] args) {
-        SpringApplication.run(Main_1.class, args);
     }
 }

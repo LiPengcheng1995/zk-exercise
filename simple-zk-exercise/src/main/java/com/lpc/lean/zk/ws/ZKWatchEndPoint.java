@@ -2,7 +2,6 @@ package com.lpc.lean.zk.ws;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
-import org.springframework.web.bind.annotation.PathVariable;
 
 import javax.websocket.*;
 import javax.websocket.server.ServerEndpoint;
@@ -28,7 +27,7 @@ public class ZKWatchEndPoint {
     @OnOpen
     public void onOpen(Session session) throws IOException {
         String mess = "收到 WebSocket 建立请求，wsId:%s";
-        mess = String.format(mess,session.getId());
+        mess = String.format(mess, session.getId());
         log.info(mess);
         sessionMap.put(session.getId(), session);
         session.getBasicRemote().sendText(mess);
@@ -42,21 +41,21 @@ public class ZKWatchEndPoint {
 
     @OnMessage
     public void onMessage(Session session, String message) throws IOException {
-        String mess="收到 WebSocket 消息，message:%s";
-        mess = String.format(mess,message);
+        String mess = "收到 WebSocket 消息，message:%s";
+        mess = String.format(mess, message);
         log.info(mess);
         session.getBasicRemote().sendText(mess);
     }
 
     @OnError
-    public void onError(Session session,Throwable throwable)  {
-        String mess="处理 WebSocket 消息出现异常，wsId:%s,%s,";
-        mess = String.format(mess,session.getId(),throwable.getMessage());
-        log.info(mess,throwable);
+    public void onError(Session session, Throwable throwable) {
+        String mess = "处理 WebSocket 消息出现异常，wsId:%s,%s,";
+        mess = String.format(mess, session.getId(), throwable.getMessage());
+        log.info(mess, throwable);
         try {
             session.getBasicRemote().sendText(mess);
         } catch (IOException e) {
-            log.info("",e);
+            log.info("", e);
         }
     }
 

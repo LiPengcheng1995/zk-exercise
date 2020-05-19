@@ -5,27 +5,28 @@
     <title>Title</title>
 </head>
 <body>
-<textarea id="history" cols="100" rows="30"></textarea>
+<textarea cols="100" id="history" rows="30"></textarea>
 
 <input id="Message">
-<input type="button" onclick="sendWS()" value="发送"/>
-<input type="button" onclick="openWS()" value="开启"/>
-<input type="button" onclick="closeWS()" value="关闭"/>
+<input onclick="sendWS()" type="button" value="发送"/>
+<input onclick="openWS()" type="button" value="开启"/>
+<input onclick="closeWS()" type="button" value="关闭"/>
 <script>
     var socket;
     var sendMessage = document.getElementById('Message');
     var messageHistory = document.getElementById('history');
 
-    function sendWS(){
-        if (socket == null){
+    function sendWS() {
+        if (socket == null) {
             addToHistory("请先打开WS连接")
-        }else {
-            addToHistory("前端: "+sendMessage.value)
+        } else {
+            addToHistory("前端: " + sendMessage.value)
 
             socket.send(sendMessage.value)
         }
     }
-    function openWS(){
+
+    function openWS() {
         // Create WebSocket connection.
         socket = new WebSocket('ws://localhost:8080/webSocket/zk');
 
@@ -36,7 +37,7 @@
 
         // Listen for messages
         socket.onmessage = function (event) {
-            addToHistory("服务端: "+event.data);
+            addToHistory("服务端: " + event.data);
         };
 
         // Listen for messages
@@ -45,13 +46,13 @@
         };
     }
 
-    function closeWS(){
+    function closeWS() {
         addToHistory("关闭WS！！！");
         socket.close()
     }
-    
+
     function addToHistory(data) {
-        messageHistory.value = messageHistory.value+"\r\n"+data;
+        messageHistory.value = messageHistory.value + "\r\n" + data;
 
     }
 </script>
