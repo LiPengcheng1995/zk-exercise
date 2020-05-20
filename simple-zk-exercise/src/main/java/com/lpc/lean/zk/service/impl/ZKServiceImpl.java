@@ -52,7 +52,7 @@ public class ZKServiceImpl implements ZKService, InitializingBean {
         try {
             zooKeeper.exists(zkPath,this);
         } catch (Throwable throwable) {
-            log.error("查询zk时出现异常");
+            log.error("查询zk时出现异常,",throwable);
         }
     }
 
