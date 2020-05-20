@@ -15,9 +15,7 @@ import javax.annotation.Resource;
 import javax.websocket.*;
 import javax.websocket.server.ServerEndpoint;
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -33,8 +31,10 @@ import java.util.concurrent.ConcurrentHashMap;
 @ServerEndpoint("/webSocket/zk")
 public class ZKWatchEndPoint{
 
+    // key 为 session id
     public static Map<String, Session> sessionMap = new ConcurrentHashMap<>();
-    public static Map<String, List<String>> zkPathWatchMap = new ConcurrentHashMap<>();
+    // key 为 zk path ，value 为监控这些 path 的 session id
+    public static Map<String, Set<String>> zkPathWatchMap = new ConcurrentHashMap<>();
 
     private ZKService zkService = ApplicationContextUtil.getBean("zkService");
 
@@ -53,12 +53,8 @@ public class ZKWatchEndPoint{
     @OnClose
     public void onClose(Session session) {
         log.info("收到 WebSocket 关闭请求，wsId:{}", session.getId());
+        removeAllSessionId(session.getId());
         sessionMap.remove(session.getId());
-        List<String> pathList = zkPathWatchMap.get(session.getId());
-        zkPathWatchMap.remove(session.getId());
-        if (!CollectionUtils.isEmpty(pathList)) {
-            pathList.forEach(zkService::removeWatch);
-        }
     }
 
     @OnMessage
@@ -69,9 +65,16 @@ public class ZKWatchEndPoint{
 
         List<String> dataList = Arrays.asList(message.split(","));
         if (ADD.equals(dataList.get(0).trim())) {
-            dataList.subList(1, dataList.size()).forEach((data) -> zkService.addWatch(data, this::noticeTheFrontEnd));
+            dataList.subList(1, dataList.size()).forEach((data) -> {
+                Set<String> watcherSet = zkPathWatchMap.computeIfAbsent(data, k -> new HashSet<>());
+                watcherSet.add(session.getId());
+                zkService.addWatch(data, this::noticeTheFrontEnd);
+            });
         } else {
-            dataList.subList(1, dataList.size()).forEach((data) -> zkService.removeWatch(data));
+            dataList.subList(1, dataList.size()).forEach((data) -> {
+                Set<String> watcherSet = zkPathWatchMap.computeIfAbsent(data, k -> new HashSet<>());
+                watcherSet.remove(session.getId());
+            });
         }
 
         session.getBasicRemote().sendText(mess);
@@ -87,6 +90,10 @@ public class ZKWatchEndPoint{
         } catch (IOException e) {
             log.info("", e);
         }
+    }
+
+    private void removeAllSessionId(String sessionId){
+        zkPathWatchMap.values().forEach((set)->set.remove(sessionId));
     }
 
     private void noticeTheFrontEnd(ZKNodeEvent event) {
