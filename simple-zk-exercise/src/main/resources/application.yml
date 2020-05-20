@@ -1,3 +1,6 @@
 zk:
   host: 127.0.0.1:2181
   sessionTimeOut: 2000
+logging:
+  level:
+    com: debug

@@ -5,12 +5,16 @@ import com.lpc.lean.zk.domain.ZKNodeEvent;
 import com.lpc.lean.zk.service.ZKService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
+import org.springframework.util.CollectionUtils;
+import org.springframework.web.bind.annotation.CookieValue;
 
 import javax.annotation.Resource;
 import javax.websocket.*;
 import javax.websocket.server.PathParam;
 import javax.websocket.server.ServerEndpoint;
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -24,36 +28,51 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 @Slf4j
 @Component
-@ServerEndpoint("/webSocket/zk/{zkNodeId}")
+@ServerEndpoint("/webSocket/zk")
 public class ZKWatchEndPoint {
 
     public static Map<String, Session> sessionMap = new ConcurrentHashMap<>();
+    public static Map<String, List<String>> zkPathWatchMap = new ConcurrentHashMap<>();
 
     @Resource
     private ZKService zkService;
 
+    public static final String ADD = "add";
+    public static final String REMOVE = "remove";
+
     @OnOpen
-    public void onOpen(Session session, @PathParam("zkNodeId") String zkNodeId) throws IOException {
-        String mess = "收到 WebSocket 建立请求，wsId:%s,zkNodeId:%s";
-        mess = String.format(mess, session.getId(),zkNodeId);
+    public void onOpen(Session session) throws IOException {
+        String mess = "收到 WebSocket 建立请求，wsId:%s";
+        mess = String.format(mess, session.getId());
         log.info(mess);
-        sessionMap.put(zkNodeId, session);
-        zkService.addWatch(zkNodeId,this::noticeTheFrontEnd);
+        sessionMap.put(session.getId(), session);
         session.getBasicRemote().sendText(mess);
     }
 
     @OnClose
-    public void onClose(Session session,@PathParam("zkNodeId") String zkNodeId) {
-        log.info("收到 WebSocket 关闭请求，wsId:{},zkNodeId:{}", session.getId(),zkNodeId);
-        sessionMap.remove(zkNodeId);
-        zkService.removeWatch(zkNodeId);
+    public void onClose(Session session) {
+        log.info("收到 WebSocket 关闭请求，wsId:{}", session.getId());
+        sessionMap.remove(session.getId());
+        List<String> pathList = zkPathWatchMap.get(session.getId());
+        zkPathWatchMap.remove(session.getId());
+        if (!CollectionUtils.isEmpty(pathList)){
+            pathList.forEach(zkService::removeWatch);
+        }
     }
 
     @OnMessage
-    public void onMessage(Session session, String message,@PathParam("zkNodeId") String zkNodeId) throws IOException {
-        String mess = "收到 WebSocket 消息，wsId:%s,zkNodeId:%s,message:%s";
-        mess = String.format(mess, session.getId(),zkNodeId,message);
+    public void onMessage(Session session, String message) throws IOException {
+        String mess = "收到 WebSocket 消息，wsId:%s,message:%s";
+        mess = String.format(mess, session.getId(),message);
         log.info(mess);
+
+        List<String> dataList = Arrays.asList(message.split(","));
+        if (ADD.equals(dataList.get(0).trim())){
+            dataList.subList(1,dataList.size()).forEach((data)->zkService.addWatch(data,this::noticeTheFrontEnd));
+        }else {
+            dataList.subList(1,dataList.size()).forEach((data)->zkService.removeWatch(data));
+        }
+
         session.getBasicRemote().sendText(mess);
     }
 

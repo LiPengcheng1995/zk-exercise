@@ -3,6 +3,7 @@ package com.lpc.lean.zk.service.impl;
 import com.lpc.lean.zk.domain.ZKNodeEvent;
 import com.lpc.lean.zk.service.ZKService;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.ZooKeeper;
 import org.springframework.beans.factory.InitializingBean;
@@ -48,6 +49,11 @@ public class ZKServiceImpl implements ZKService, InitializingBean {
     @Override
     public void addWatch(String zkPath, Consumer<ZKNodeEvent> consumer) {
         listenerMap.put(zkPath, consumer);
+        try {
+            zooKeeper.exists(zkPath,this);
+        } catch (Throwable throwable) {
+            log.error("查询zk时出现异常");
+        }
     }
 
     @Override
