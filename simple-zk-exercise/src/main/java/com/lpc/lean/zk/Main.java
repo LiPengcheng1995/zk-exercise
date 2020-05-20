@@ -3,6 +3,7 @@ package com.lpc.lean.zk;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
+import org.springframework.web.socket.config.annotation.EnableWebSocket;
 import org.springframework.web.socket.server.standard.ServerEndpointExporter;
 
 /**
@@ -14,6 +15,7 @@ import org.springframework.web.socket.server.standard.ServerEndpointExporter;
  * Description: 进行zk的最基本功能的实践，不要贪多了。
  * 使用 SpringBoot 启动吧，带上完整的日志功能，方便使用
  */
+@EnableWebSocket
 @SpringBootApplication
 public class Main {
 
