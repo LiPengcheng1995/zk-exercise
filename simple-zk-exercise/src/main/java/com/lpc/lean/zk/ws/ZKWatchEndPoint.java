@@ -98,19 +98,28 @@ public class ZKWatchEndPoint{
 
     private boolean noticeTheFrontEnd(ZKNodeEvent event) {
         String eventStr = JSON.toJSONString(event);
-        Session session = sessionMap.get(event.getPath());
-        if (session == null) {
-            log.error("要发送的消息没有找到对应的session,event:{}", eventStr);
-            zkService.removeWatch(event.getPath());
-            return false;
-        }
+        boolean ifSend = false;
 
-        log.info("找到消息发送用的 session,event:{},sessionId:{}", eventStr, session.getId());
-        try {
-            session.getBasicRemote().sendText(eventStr);
-        } catch (IOException e) {
-            log.error("向前端发送信息失败,event:{},sessionId:{}", eventStr, session.getId());
+        Set<String> sessionIdSet = zkPathWatchMap.get(event.getPath());
+        if (sessionIdSet == null){
+            log.error("要发送的消息没有找到对应的session,event:{}", eventStr);
+            return ifSend;
         }
-        return true;
+        for (String sessionId:sessionIdSet){
+            Session session = sessionMap.get(sessionId);
+            if (session == null) {
+                log.error("sessionId没有找到对应的session,sessionId:{},event:{}",sessionId, eventStr);
+                zkService.removeWatch(event.getPath());
+                continue;
+            }
+            log.info("找到消息发送用的 session,event:{},sessionId:{}", eventStr, session.getId());
+            try {
+                session.getBasicRemote().sendText(eventStr);
+            } catch (IOException e) {
+                log.error("向前端发送信息失败,event:{},sessionId:{}", eventStr, session.getId());
+            }
+            ifSend = true;
+        }
+        return ifSend;
     }
 }
