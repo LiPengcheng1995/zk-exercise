@@ -28,7 +28,7 @@ import java.util.function.Consumer;
  * Description:
  */
 @Slf4j
-@Service
+@Service("zkService")
 public class ZKServiceImpl implements ZKService, InitializingBean {
 
 

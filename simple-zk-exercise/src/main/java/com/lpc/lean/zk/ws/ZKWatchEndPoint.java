@@ -1,6 +1,7 @@
 package com.lpc.lean.zk.ws;
 
 import com.alibaba.fastjson.JSON;
+import com.lpc.lean.zk.common.ApplicationContextUtil;
 import com.lpc.lean.zk.domain.ZKNodeEvent;
 import com.lpc.lean.zk.service.ZKService;
 import lombok.extern.slf4j.Slf4j;
@@ -30,13 +31,12 @@ import java.util.concurrent.ConcurrentHashMap;
 @Slf4j
 @Component
 @ServerEndpoint("/webSocket/zk")
-public class ZKWatchEndPoint  {
+public class ZKWatchEndPoint{
 
     public static Map<String, Session> sessionMap = new ConcurrentHashMap<>();
     public static Map<String, List<String>> zkPathWatchMap = new ConcurrentHashMap<>();
 
-    @Resource
-    private ZKService zkService;
+    private ZKService zkService = ApplicationContextUtil.getBean("zkService");
 
     public static final String ADD = "add";
     public static final String REMOVE = "remove";
@@ -105,5 +105,4 @@ public class ZKWatchEndPoint  {
             log.error("向前端发送信息失败,event:{},sessionId:{}", eventStr, session.getId());
         }
     }
-
 }
