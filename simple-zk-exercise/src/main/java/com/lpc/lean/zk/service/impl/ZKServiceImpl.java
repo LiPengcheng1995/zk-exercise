@@ -90,13 +90,14 @@ public class ZKServiceImpl implements ZKService, InitializingBean {
             log.info("没有变动路径，不处理");
             return;
         }
+        // TODO watchedEvent.getType() 可以用来处理节点创建、删除的相关事件
         Function<ZKNodeEvent,Boolean> function = listenerMap.get(path);
         if (function == null) {
             log.info("没有注册次节点变动的监控，不处理");
             return;
         }
         try {
-            String newValue = Arrays.toString(zooKeeper.getData(path, this, null));
+            String newValue = new String(zooKeeper.getData(path, this, null));
             log.info("收到 ZK 的节点改变通知，path:{},newValue:{}", watchedEvent.getPath(), newValue);
 
             ZKNodeEvent event = new ZKNodeEvent();
