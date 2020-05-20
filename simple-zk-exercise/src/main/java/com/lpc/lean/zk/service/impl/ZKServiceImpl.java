@@ -18,6 +18,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 /**
  * Package: com.lpc.lean.zk.service.impl
@@ -43,12 +44,12 @@ public class ZKServiceImpl implements ZKService, InitializingBean {
 
     private volatile CountDownLatch startLatch;
 
-    private Map<String, Consumer<ZKNodeEvent>> listenerMap = new ConcurrentHashMap<>();
+    private Map<String, Function<ZKNodeEvent,Boolean>> listenerMap = new ConcurrentHashMap<>();
 
 
     @Override
-    public void addWatch(String zkPath, Consumer<ZKNodeEvent> consumer) {
-        listenerMap.put(zkPath, consumer);
+    public void addWatch(String zkPath, Function<ZKNodeEvent,Boolean> function) {
+        listenerMap.put(zkPath, function);
         try {
             zooKeeper.exists(zkPath,this);
         } catch (Throwable throwable) {
@@ -89,8 +90,8 @@ public class ZKServiceImpl implements ZKService, InitializingBean {
             log.info("没有变动路径，不处理");
             return;
         }
-        Consumer<ZKNodeEvent> consumer = listenerMap.get(path);
-        if (consumer == null) {
+        Function<ZKNodeEvent,Boolean> function = listenerMap.get(path);
+        if (function == null) {
             log.info("没有注册次节点变动的监控，不处理");
             return;
         }
@@ -101,7 +102,10 @@ public class ZKServiceImpl implements ZKService, InitializingBean {
             ZKNodeEvent event = new ZKNodeEvent();
             event.setPath(path);
             event.setNewValue(newValue);
-            consumer.accept(event);
+            Boolean res = function.apply(event);
+            if (res == null || !res){// 无需监控，释放
+                removeWatch(path);
+            }
 
         } catch (Throwable throwable) {
             log.error("反查节点最新信息时并通知前端时出现异常，path:{},",path,throwable);

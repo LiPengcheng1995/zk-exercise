@@ -4,6 +4,7 @@ import com.lpc.lean.zk.domain.ZKNodeEvent;
 import org.apache.zookeeper.Watcher;
 
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 /**
  * Package: com.lpc.lean.zk.service
@@ -14,6 +15,6 @@ import java.util.function.Consumer;
  * Description:
  */
 public interface ZKService extends Watcher {
-    void addWatch(String zkPath, Consumer<ZKNodeEvent> consumer);
+    void addWatch(String zkPath, Function<ZKNodeEvent,Boolean> consumer);
     void removeWatch(String zkPath);
 }

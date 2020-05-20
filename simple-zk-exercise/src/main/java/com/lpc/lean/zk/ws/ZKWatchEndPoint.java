@@ -96,13 +96,13 @@ public class ZKWatchEndPoint{
         zkPathWatchMap.values().forEach((set)->set.remove(sessionId));
     }
 
-    private void noticeTheFrontEnd(ZKNodeEvent event) {
+    private boolean noticeTheFrontEnd(ZKNodeEvent event) {
         String eventStr = JSON.toJSONString(event);
         Session session = sessionMap.get(event.getPath());
         if (session == null) {
             log.error("要发送的消息没有找到对应的session,event:{}", eventStr);
             zkService.removeWatch(event.getPath());
-            return;
+            return false;
         }
 
         log.info("找到消息发送用的 session,event:{},sessionId:{}", eventStr, session.getId());
@@ -111,5 +111,6 @@ public class ZKWatchEndPoint{
         } catch (IOException e) {
             log.error("向前端发送信息失败,event:{},sessionId:{}", eventStr, session.getId());
         }
+        return true;
     }
 }
